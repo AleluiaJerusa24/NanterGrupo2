@@ -13,6 +13,7 @@ export class Ludo {
     get diceValue() {
         return this._diceValue;
     }
+
     set diceValue(value) {
         this._diceValue = value;
 
@@ -43,6 +44,14 @@ export class Ludo {
         }
     }
 
+    _isKill;
+    get isKill(){
+        return this._isKill
+    }
+    set isKill(value){
+        this._isKill=value;
+    }
+
     constructor() {
         console.log('Hello World! Lets play Ludo!');
 
@@ -52,9 +61,12 @@ export class Ludo {
         this.listenDiceClick();
         this.listenResetClick();
         this.listenPieceClick();
+    
+
+        //this.setPiecePosition('P1', 400, 0);
 
         this.resetGame();
-        // this.setPiecePosition('P1', 0, 0);
+        
         // this.setPiecePosition('P2', 0, 1);
         // this.diceValue = 6;
         // console.log(this.getEligiblePieces('P1'))
@@ -68,21 +80,32 @@ export class Ludo {
     onDiceClick() {
         console.log('dice clicked!');
        this.diceValue = 1 + Math.floor(Math.random() * 6);
+       
   
         this.state = STATE.DICE_ROLLED;
         
         this.checkForEligiblePieces();
     }
-// função usada para verificar se o joagdor actual tem peças elegiveis 
+
+
+    /*POSSO PEGAR ESSA LÓGICA PARA ADICIONAR MAIS 20 QUANDO MATAR*/
+
+
+// função usada para verificar se o joagdor actual tem peças elegiveis (peças que estejam no tabuleiro)
 // paa jogar, ou seja, verifica se o player tem peças que possam se mover
     checkForEligiblePieces() {
         const player = PLAYERS[this.turn];
-        // eligible pieces of given player
+        
+        // peças elegíveis para o jogador atual
         const eligiblePieces = this.getEligiblePieces(player);
+
         if(eligiblePieces.length) {
+
             // highlight the pieces
             UI.highlightPieces(player, eligiblePieces);
+
         } else {
+
             this.incrementTurn();
         }
     }
@@ -92,7 +115,13 @@ export class Ludo {
         this.state = STATE.DICE_NOT_ROLLED;
     }
 
+
+    
+
+
+
     getEligiblePieces(player) {
+        
         return [0, 1, 2, 3].filter(piece => {
             const currentPosition = this.currentPositions[player][piece];
 
@@ -117,6 +146,8 @@ export class Ludo {
             return true;
         });
     }
+
+    
 
     listenResetClick() {
         UI.listenResetClick(this.resetGame.bind(this))
@@ -154,12 +185,16 @@ export class Ludo {
 
         const player = target.getAttribute('player-id');
         const piece = target.getAttribute('piece');
+
         this.handlePieceClick(player, piece);
+    
     }
+
 
     handlePieceClick(player, piece) {
         console.log(player, piece);
         const currentPosition = this.currentPositions[player][piece];
+        console.log("Posição atual: ",currentPosition);
         
         if(BASE_POSITIONS[player].includes(currentPosition)) {
             this.setPiecePosition(player, piece, START_POSITIONS[player]);
@@ -168,7 +203,23 @@ export class Ludo {
         }
 
         UI.unhighlightPieces();
-        this.movePiece(player, piece, this.diceValue);
+        
+        
+        //Verifica se o jogador atual matou um oponente
+        this.isKill=this.checkForKill(player,piece);
+
+        console.log("valor do isKILL", this.isKill);
+
+        if (this.isKill) {
+
+            this.movePiece(player, piece, 20);    //caso tenha matado alguém então, tem a oportunidade de andar 20 casas com uma das peças
+            //this.state = STATE.DICE_NOT_ROLLED;
+        } else {
+            this.movePiece(player, piece, this.diceValue);    //caso contrário então, anda apenas o número de casas que saiu no dado
+
+        }
+        
+
     }
 
     setPiecePosition(player, piece, newPosition) {
@@ -195,10 +246,13 @@ export class Ludo {
 
                 const isKill = this.checkForKill(player, piece);
 
-                if(isKill || this.diceValue === 6) {
+                if (isKill || this.diceValue === 6 ) {
+                    // Se o dado foi rolado 6, permitir que o jogador role novamente
                     this.state = STATE.DICE_NOT_ROLLED;
                     return;
                 }
+    
+                
 
                 this.incrementTurn();
             }
@@ -216,8 +270,9 @@ export class Ludo {
             const opponentPosition = this.currentPositions[opponent][piece];
 
             if(currentPosition === opponentPosition && !SAFE_POSITIONS.includes(currentPosition)) {
+                
                 this.setPiecePosition(opponent, piece, BASE_POSITIONS[opponent][piece]);
-                kill = true
+                kill = true;
             }
         });
         }
@@ -227,6 +282,9 @@ export class Ludo {
         
         return kill
     }
+
+
+
 
     hasPlayerWon(player) {
         return [0, 1, 2, 3].every(piece => this.currentPositions[player][piece] === HOME_POSITIONS[player])
@@ -240,6 +298,7 @@ export class Ludo {
         const currentPosition = this.currentPositions[player][piece];
 
         if(currentPosition === TURNING_POINTS[player]) {
+
             return HOME_ENTRANCE[player][0];
         }
         else if(currentPosition === 79) {
@@ -247,4 +306,7 @@ export class Ludo {
         }
         return currentPosition + 1;
     }
+
+    /**MÉTODOS PARA GIRAR O MUNDO*/
+    
 }

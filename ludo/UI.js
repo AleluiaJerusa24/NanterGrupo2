@@ -40,6 +40,8 @@ export class UI {
         pieceElement.style.left = x * STEP_LENGTH + '%';
     }
 
+    
+
     static setTurn(index) {
         if(index < 0 || index >= PLAYERS.length) {
             console.error('index out of bound!');
